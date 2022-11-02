@@ -66,20 +66,20 @@ var _ = Describe("Injector", func() {
 	It("can bind a Type to an instance", func() {
 		instance := &RandomStruct{}
 		injector.bind(reflect.TypeOf(instance), instance)
-		Expect(injector.getInstance(reflect.TypeOf(instance))).To(Equal(instance))
+		Expect(injector.GetInstance(reflect.TypeOf(instance))).To(Equal(instance))
 	})
 
 	It("can bind a string to an instance", func() {
 		instance := &RandomStruct{}
 		injector.bind("random string", instance)
-		Expect(injector.getInstance("random string")).To(Equal(instance))
+		Expect(injector.GetInstance("random string")).To(Equal(instance))
 	})
 
 	Describe("binding to a function", func() {
 		Context("when the function has no input parameters", func() {
 			It("invokes the function and returns its return value", func() {
 				injector.bindToFunction("foo", functionWithNoInputParameters)
-				Expect(injector.getInstance("foo")).To(Equal(functionWithNoInputParameters()))
+				Expect(injector.GetInstance("foo")).To(Equal(functionWithNoInputParameters()))
 			})
 		})
 
@@ -87,7 +87,7 @@ var _ = Describe("Injector", func() {
 			It("resolves the parameter value by looking for a binding for its type", func() {
 				injector.bindToFunction("foo", functionWithOneInputParameter)
 				injector.bind(reflect.TypeOf("hello"), "hello")
-				Expect(injector.getInstance("foo")).To(Equal(functionWithOneInputParameter("hello")))
+				Expect(injector.GetInstance("foo")).To(Equal(functionWithOneInputParameter("hello")))
 			})
 		})
 
@@ -108,11 +108,9 @@ var _ = Describe("Injector", func() {
 
 				injector.bindToFunction(addressType, newAddress)
 
-				Expect(injector.getInstance(addressType)).To(Equal(newAddress(street, city, state, zip)))
+				Expect(injector.GetInstance(addressType)).To(Equal(newAddress(street, city, state, zip)))
 			})
 		})
-
-
 	})
 
 	It("can bind an instance to an interface Type ", func() {
@@ -123,19 +121,8 @@ var _ = Describe("Injector", func() {
 		}
 
 		typeOf := reflect.TypeOf(&x).Elem()
-		// kind := typeOf.Kind()
-		// fmt.Printf("kind: %+v\n", kind)
-		// fmt.Printf("typeOf is interface: %v\n", typeOf.Kind() == reflect.Interface)
-		// fmt.Printf("typeOf: %+v %T", x, x)
 
 		injector.bind(typeOf, randomStruct)
-		Expect(injector.getInstance(typeOf)).To(Equal(randomStruct))
+		Expect(injector.GetInstance(typeOf)).To(Equal(randomStruct))
 	})
-
-	Describe("computeLatency", func() {
-		Context("When the ReceptionReport has a LastSenderReport but no Delay", func() {
-			It("computes the diff (ms) between 'now' and the LastSenderReport", func() {
-			})	
-		})
-  })
 })
