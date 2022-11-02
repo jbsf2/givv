@@ -1,7 +1,6 @@
 package givv
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -14,7 +13,7 @@ type FunctionProvider struct {
 
 func (provider FunctionProvider) get() any {
 	inValues := provider.inValues()
-	fmt.Printf("inValue: %+v\n", inValues)
+	// fmt.Printf("inValue: %+v\n", inValues)
 	return provider.valueOf.Call(inValues)[0].Interface()
 }
 

@@ -1,15 +1,22 @@
 package givv
 
 import (
-	// "fmt"
 	"reflect"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-type RandomInterface interface {}
-type RandomStruct struct {}
+type RandomInterface interface {
+	DoSomething(string)
+}
+type RandomStruct struct {
+	name string
+}
+
+func (random *RandomStruct) DoSomething(str string) {
+}
+
 type OtherRandomStruct struct {}
 
 type state struct {
@@ -109,16 +116,20 @@ var _ = Describe("Injector", func() {
 	})
 
 	It("can bind an instance to an interface Type ", func() {
-		// // instance := &RandomStruct{}
-		// // injector.bindInstance(RandomInterface., instance)
-		// // Expect(injector.getInstance(reflect.TypeOf(instance))).To(Equal(instance))
-		// instance := &RandomStruct{}
-		// value := reflect.ValueOf(instance)
-		// otherInstance := &OtherRandomStruct{}
-		// otherValue := reflect.ValueOf(otherInstance)
-		// Expect(value.Interface().(RandomInterface)).To(Equal(otherValue.Interface().(RandomInterface)))
-		// fmt.Printf("value: %+v\n", value)
-		// fmt.Printf("interface: %+v\n", value.Interface().(RandomInterface))
+		var x RandomInterface
+
+		randomStruct := RandomStruct{
+			name: "foo",
+		}
+
+		typeOf := reflect.TypeOf(&x).Elem()
+		// kind := typeOf.Kind()
+		// fmt.Printf("kind: %+v\n", kind)
+		// fmt.Printf("typeOf is interface: %v\n", typeOf.Kind() == reflect.Interface)
+		// fmt.Printf("typeOf: %+v %T", x, x)
+
+		injector.bind(typeOf, randomStruct)
+		Expect(injector.getInstance(typeOf)).To(Equal(randomStruct))
 	})
 
 	Describe("computeLatency", func() {
