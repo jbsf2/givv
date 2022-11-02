@@ -22,7 +22,9 @@ func NewFunctionProvider(function any, injector *Injector) *FunctionProvider{
 
 func (provider FunctionProvider) Get() any {
 	inValues := provider.inValues()
-	// fmt.Printf("inValue: %+v\n", inValues)
+	// fmt.Printf("inValues: %+v\n", inValues)
+	// fmt.Printf("valueOf: %+v", provider.valueOf)
+	// fmt.Printf("typeOf: %+v", provider.typeOf)
 	return provider.valueOf.Call(inValues)[0].Interface()
 }
 

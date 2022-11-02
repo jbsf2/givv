@@ -8,13 +8,14 @@ import (
 )
 
 type RandomInterface interface {
-	DoSomething(string)
+	DoSomething(string) string
 }
 type RandomStruct struct {
 	name string
 }
 
-func (random *RandomStruct) DoSomething(str string) {
+func (random *RandomStruct) DoSomething(something string) string {
+	return "I did " + something
 }
 
 type OtherRandomStruct struct {}
@@ -45,6 +46,10 @@ func functionWithNoInputParameters() string {
 
 func functionWithOneInputParameter(message string) string {
 	return message
+}
+
+func functionWithInterfaceParameter(randomInterface RandomInterface) string {
+	return randomInterface.DoSomething("something")
 }
 
 func newAddress(street string, city city, state state, zip zipcode) address {
@@ -109,6 +114,20 @@ var _ = Describe("Injector", func() {
 				injector.bindToFunction(addressType, newAddress)
 
 				Expect(injector.GetInstance(addressType)).To(Equal(newAddress(street, city, state, zip)))
+			})
+		})
+
+		Context("when an input parameter has an interface type", func() {
+			It("it is able to resolve the interface binding", func() {
+				var x RandomInterface
+
+				interfaceImpl := RandomStruct{}
+
+				typeOf := reflect.TypeOf(&x).Elem()
+
+				injector.bind(typeOf, &interfaceImpl)
+				injector.bindToFunction("foo", functionWithInterfaceParameter)
+				Expect(injector.GetInstance("foo")).To(Equal(functionWithInterfaceParameter(&interfaceImpl)))
 			})
 		})
 	})
