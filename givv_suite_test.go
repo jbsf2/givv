@@ -11,3 +11,63 @@ func TestGivv(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Givv Suite")
 }
+
+type RandomInterface interface {
+	DoSomething(string) string
+}
+type RandomStruct struct {
+	name string
+}
+
+func (random *RandomStruct) DoSomething(something string) string {
+	return "I did " + something
+}
+
+type EmptyStruct struct {
+}
+
+type state struct {
+	name string
+	capital city
+}
+
+type city struct {
+	name string
+}
+
+type zipcode struct {
+	code string
+}
+
+type address struct {
+	street string
+	city   city
+	state  state
+	zip    zipcode
+}
+
+func functionWithInterfaceParameter(randomInterface RandomInterface) string {
+	return randomInterface.DoSomething("something")
+}
+
+func newAddress(street string, city city, state state, zip zipcode) address {
+	return address {
+		street: street,
+		city: city,
+		state: state,
+		zip: zip,
+	}
+}
+
+func functionWithNoInputParameters() string {
+	return "hello"
+}
+
+func functionWithOneInputParameter(message string) string {
+	return message
+}
+
+func functionWithThreeInputParameters(message string, city *city, state state) string {
+	return message
+}
+

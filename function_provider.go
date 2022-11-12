@@ -8,15 +8,15 @@ type FunctionProvider struct {
 	function any
 	typeOf   reflect.Type
 	valueOf  reflect.Value
-	injector *Injector
+	resolver *Resolver
 }
 
-func NewFunctionProvider(function any, injector *Injector) *FunctionProvider{
+func NewFunctionProvider(function any, resolver *Resolver) *FunctionProvider{
 	return &FunctionProvider{
 		function: function,
 		typeOf: reflect.TypeOf(function),
 		valueOf: reflect.ValueOf(function),
-		injector: injector,
+		resolver: resolver,
 	}
 }
 
@@ -34,8 +34,9 @@ func (provider FunctionProvider) inValues() []reflect.Value {
 
 	for i := 0; i < numIn; i++ {
 		in := provider.typeOf.In(i)
-		instance := provider.injector.GetInstance(in)
-		inValues = append(inValues, reflect.ValueOf(instance))
+		// Debug("typeOf in: %+v", in)
+		paramValue := provider.resolver.Resolve(in)
+		inValues = append(inValues, reflect.ValueOf(paramValue))
 	}
 
 	return inValues
