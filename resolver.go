@@ -1,6 +1,9 @@
 package givv
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 type any interface{}
 
@@ -41,7 +44,8 @@ func (resolver *Resolver) Bind(key any, value any) {
 		valueType := reflect.TypeOf(value)
 
 		if !valueType.Implements(key.(reflect.Type)) {
-			panic("interface not implemented")
+			message := fmt.Sprintf("binding key interface %+v not implemented by binding value %+v", key, value)
+			panic(message)
 		}
 	}
  
@@ -49,8 +53,21 @@ func (resolver *Resolver) Bind(key any, value any) {
 	resolver.providers[key] = &InstanceProvider[any]{instance: value}
 }
 
+func BindInterface[T any](resolver *Resolver, interfaceType T, value any) {
+	if !isInterface(interfaceType) {
+		givvPanic("interfaceType: %+v is not an interface type", interfaceType)
+	}
+
+	resolver.Bind(reflect.TypeOf(&interfaceType).Elem(), value)
+}
+
 func (resolver *Resolver) BindToFunction(key any, function any) {
 	resolver.providers[key] = NewFunctionProvider(function, resolver)
+}
+
+func isInterface[T any](value T) bool {
+	maybeInterfaceType := reflect.TypeOf(&value).Elem()
+	return maybeInterfaceType.Kind() == reflect.Interface
 }
 
 
