@@ -53,12 +53,12 @@ func (resolver *Resolver) Bind(key any, value any) {
 	resolver.providers[key] = &InstanceProvider[any]{instance: value}
 }
 
-func BindInterface[T any](resolver *Resolver, interfaceType T, value any) {
-	if !isInterface(interfaceType) {
-		givvPanic("interfaceType: %+v is not an interface type", interfaceType)
+func BindInterface[T any](resolver *Resolver, key T, value T) {
+	if !isInterface(key) {
+		givvPanic("interfaceType: %+v is not an interface type", key)
 	}
 
-	resolver.Bind(reflect.TypeOf(&interfaceType).Elem(), value)
+	resolver.Bind(reflect.TypeOf(&key).Elem(), value)
 }
 
 func (resolver *Resolver) BindToFunction(key any, function any) {

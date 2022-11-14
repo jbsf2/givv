@@ -123,26 +123,16 @@ var _ = Describe("resolver", func() {
 		Context("When the key is not an interface type", func() {
 			It("panics", func() {
 				notAnInterface := RandomStruct{}
-				notAnInterfaceType := reflect.TypeOf(notAnInterface)
-
-				Expect(func(){BindInterface(resolver, notAnInterfaceType, notAnInterface)}).To(Panic())
-			})
-		})
-
-		Context("When the value does not implement the interface", func() {
-			It("panics", func() {
-				var interfaceType RandomInterface
-				// BindInterface(resolver, interfaceType, EmptyStruct{})
-				Expect(func(){BindInterface(resolver, interfaceType, EmptyStruct{})}).To(Panic())
+				Expect(func(){BindInterface(resolver, notAnInterface, notAnInterface)}).To(Panic())
 			})
 		})
 
 		Context("When the value implements the interface", func() {
 			It("successfully binds", func() {
-				var interfaceType RandomInterface
-				interfaceImpl := &RandomStruct{}
+				var interfaceImpl RandomInterface
+				interfaceImpl = &RandomStruct{}
 				// BindInterface(resolver, interfaceType, EmptyStruct{})
-				BindInterface(resolver, interfaceType, interfaceImpl)
+				BindInterface(resolver, interfaceImpl, interfaceImpl)
 				resolver.BindToFunction("foo", functionWithInterfaceParameter)
 				Expect(resolver.Resolve("foo")).To(Equal(functionWithInterfaceParameter(interfaceImpl)))
 			})
