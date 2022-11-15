@@ -76,6 +76,26 @@ var _ = Describe("resolver", func() {
 				Expect(resolver.Resolve("foo")).To(Equal(functionWithInterfaceParameter(&interfaceImpl)))
 			})
 		})
+
+		Context("with argument specs", func() {
+			It("it resolves the arguments using the specs", func() {
+				street := "731 Market St."
+				city := city{name: "San Francisco"}
+				state := state{name: "California"}
+				zip := zipcode{code: "94110"}
+
+				addressType := reflect.TypeOf(address{})
+
+				resolver.Bind(reflect.TypeOf(street), street)
+				resolver.Bind("city", city)
+
+				argSpecs := []ArgSpec{UseArgType(), ArgKey("city"), ArgValue(state), ArgValue(zip)}
+
+				resolver.BindToFunctionWithArgSpecs(addressType, newAddress, argSpecs)
+
+				Expect(resolver.Resolve(addressType)).To(Equal(newAddress(street, city, state, zip)))
+			})
+		})
 	})
 
 	Describe("binding to an interface type", func() {
@@ -137,5 +157,54 @@ var _ = Describe("resolver", func() {
 				Expect(resolver.Resolve("foo")).To(Equal(functionWithInterfaceParameter(interfaceImpl)))
 			})
 		})
+	})
+
+	Describe("BindTypeToInstance()", func() {
+		Context("when the value is nil", func() {
+			It("panics", func() {
+				var nilPointer *RandomStruct
+				Expect(func(){BindTypeToInstance(resolver, nilPointer)}).To(Panic())
+			})
+		})
+
+		Context("when the value is a struct", func() {
+			It("successfully binds", func() {
+				randomStruct := RandomStruct{}
+				BindTypeToInstance(resolver, randomStruct)
+				resolver.BindToFunction("foo", functionWithStructParameter)
+				Expect(resolver.Resolve("foo")).To(Equal(functionWithStructParameter(randomStruct)))
+			})
+		})
+
+		Context("when the value is a struct pointer", func() {
+			It("successfully binds", func() {
+				structPointer := &RandomStruct{}
+				BindTypeToInstance(resolver, structPointer)
+				resolver.BindToFunction("foo", functionWithStructPointerParameter)
+				Expect(resolver.Resolve("foo")).To(Equal(functionWithStructPointerParameter(structPointer)))
+			})
+		})
+
+		Context("when the value is a channel", func() {
+			It("successfully binds", func() {
+				channel := make(chan string)
+				wrongChannelType := make(chan int)
+				BindTypeToInstance(resolver, channel)
+				BindTypeToInstance(resolver, wrongChannelType)
+				resolver.BindToFunction("foo", functionWithChanParameter)
+				Expect(resolver.Resolve("foo")).To(Equal(functionWithChanParameter(channel)))
+			})
+		})
+
+		// Context("when the value is a parameterized type", func() {
+		// 	It("respects the typing", func() {
+		// 		rightMap := 
+		// 		wrongChannelType := make(chan int)
+		// 		BindTypeToInstance(resolver, channel)
+		// 		BindTypeToInstance(resolver, wrongChannelType)
+		// 		resolver.BindToFunction("foo", functionWithChanParameter)
+		// 		Expect(resolver.Resolve("foo")).To(Equal(functionWithChanParameter(channel)))
+		// 	})
+		// })
 	})
 })

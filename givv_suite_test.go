@@ -46,10 +46,6 @@ type address struct {
 	zip    zipcode
 }
 
-func functionWithInterfaceParameter(randomInterface RandomInterface) string {
-	return randomInterface.DoSomething("something")
-}
-
 func newAddress(street string, city city, state state, zip zipcode) address {
 	return address {
 		street: street,
@@ -69,5 +65,21 @@ func functionWithOneInputParameter(message string) string {
 
 func functionWithThreeInputParameters(message string, city *city, state state) string {
 	return message
+}
+
+func functionWithInterfaceParameter(randomInterface RandomInterface) string {
+	return randomInterface.DoSomething("something")
+}
+
+func functionWithStructParameter(randomStruct RandomStruct) RandomStruct {
+	return randomStruct
+}
+
+func functionWithStructPointerParameter(structPointer *RandomStruct) *RandomStruct {
+	return structPointer
+}
+
+func functionWithChanParameter(channel chan(string)) chan(string) {
+	return channel
 }
 

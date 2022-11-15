@@ -61,13 +61,41 @@ func BindInterface[T any](resolver *Resolver, key T, value T) {
 	resolver.Bind(reflect.TypeOf(&key).Elem(), value)
 }
 
+func BindTypeToInstance[T any](resolver *Resolver, instance T) {
+	typeOf := reflect.TypeOf(instance)
+
+	if isNilable(typeOf) && isNil(instance) {
+		givvPanic("Cannot use BindTypeToInstance to bind to a nil value")
+	}
+
+	resolver.Bind(typeOf, instance)
+}
+
 func (resolver *Resolver) BindToFunction(key any, function any) {
-	resolver.providers[key] = NewFunctionProvider(function, resolver)
+	resolver.providers[key] = NewFunctionProvider(resolver, function)
+}
+
+func (resolver *Resolver) BindToFunctionWithArgSpecs(key any, function any, argSpecs []ArgSpec) {
+	resolver.providers[key] = NewFunctionProviderWithArgSpecs(resolver, function, argSpecs)
 }
 
 func isInterface[T any](value T) bool {
 	maybeInterfaceType := reflect.TypeOf(&value).Elem()
 	return maybeInterfaceType.Kind() == reflect.Interface
+}
+
+func isNil[T any](value T) bool {
+	return reflect.ValueOf(value).IsNil()
+}
+
+func isNilable(reflectType reflect.Type) bool {
+	switch reflectType.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, 
+		reflect.Map, reflect.Pointer, reflect.Slice:
+		return true
+	}
+
+	return false
 }
 
 
