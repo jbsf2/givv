@@ -1,42 +1,78 @@
 package givv
 
-import "reflect"
-
-type ArgSpec interface {
-	resolve(resolver *Resolver, argType reflect.Type) any
+type ArgSpec[T any] interface {
+	resolve(resolver *Resolver) T
+	setValue(T)
 }
 
-type argValue struct{
-	value any
+// ----------
+
+type argValue[T any] struct{
+	value T
 }
 
-func ArgValue(value any) *argValue{
-	return &argValue{value: value}
+func ArgValue[T any](value T) ArgSpec[T]{
+	return argValue[T]{value: value}
 }
 
-func (argValue *argValue) resolve(resolver *Resolver, argType reflect.Type) any {
+func (argValue argValue[T]) resolve(resolver *Resolver) T {
 	return argValue.value
 }
 
-type argKey struct {
-	key any
+func (argValue argValue[T]) setValue(T) {
+	// arg value is set at creation time
 }
 
-func ArgKey(key any) *argKey {
-	return &argKey{key: key}
+// ----------
+
+type argKey[T any] struct {
+	key key[T]
 }
 
-func (argKey *argKey) resolve(resolver *Resolver, argType reflect.Type) any {
-	return resolver.Resolve(argKey.key)
+func ArgKey[T any](keyValue T) ArgSpec[T] {
+	return argKey[T]{key: Key[T](keyValue)}
 }
 
-type useArgType struct {
+func (argKey argKey[T]) resolve(resolver *Resolver) T {
+	return Resolve(resolver, argKey.key)
 }
 
-func UseArgType() *useArgType {
-	return &useArgType{}
+func (argValue argKey[T]) setValue(T) {
 }
 
-func (useArgType *useArgType) resolve(resolver *Resolver, argType reflect.Type) any {
-	return resolver.Resolve(argType)
+// ----------
+
+type argType[T any] struct {
+	key key[T]
 }
+
+func ArgType[T any]() ArgSpec[T] {
+	return argType[T]{key: TypeKey[T]()}
+}
+
+func (argType argType[T]) resolve(resolver *Resolver) T {
+	return Resolve(resolver, argType.key)
+}
+
+func (argType argType[T]) setValue(T) {
+}
+
+
+// -----------
+
+type dynamicArg[T any] struct {
+	value T
+}
+
+func DynamicArg[T any]() ArgSpec[T] {
+	return dynamicArg[T]{}
+}
+
+func (arg dynamicArg[T]) resolve(resolver *Resolver) T {
+	return arg.value
+}
+
+func (arg dynamicArg[T]) setValue(value T) {
+	arg.value = value
+}
+

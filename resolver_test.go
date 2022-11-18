@@ -1,8 +1,6 @@
 package givv
 
 import (
-	"reflect"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -16,29 +14,32 @@ var _ = Describe("resolver", func() {
 
 	It("can bind a Type to an instance", func() {
 		instance := &RandomStruct{}
-		resolver.Bind(reflect.TypeOf(instance), instance)
-		Expect(resolver.Resolve(reflect.TypeOf(instance))).To(Equal(instance))
+		key := TypeKey[*RandomStruct]()
+		Bind(resolver, key, instance)
+		Expect(Resolve(resolver, key)).To(Equal(instance))
 	})
 
 	It("can bind a string to an instance", func() {
 		instance := &RandomStruct{}
-		resolver.Bind("random string", instance)
-		Expect(resolver.Resolve("random string")).To(Equal(instance))
+		key := Key[*RandomStruct]("random string")
+		Bind(resolver, key, instance)
+		Expect(Resolve(resolver, key)).To(Equal(instance))
 	})
 
 	Describe("binding to a function", func() {
 		Context("when the function has no input parameters", func() {
 			It("invokes the function and returns its return value", func() {
-				resolver.BindToFunction("foo", functionWithNoInputParameters)
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithNoInputParameters()))
+				key := Key[string]("foo")
+				BindToFunction(resolver, key, functionWithNoInputParameters)
+				Expect(Resolve(resolver, key)).To(Equal(functionWithNoInputParameters()))
 			})
 		})
 
 		Context("when the function has one input parameter", func() {
 			It("resolves the parameter value by looking for a binding for its type", func() {
-				resolver.BindToFunction("foo", functionWithOneInputParameter)
-				resolver.Bind(reflect.TypeOf("hello"), "hello")
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithOneInputParameter("hello")))
+				BindToFunction1Arg(resolver, TypeKey[string](), functionWithOneInputParameter, ArgKey("hello"))
+				Bind(resolver, Key[string]("hello"), "hello")
+				Expect(Resolve(resolver, TypeKey[string]())).To(Equal(functionWithOneInputParameter("hello")))
 			})
 		})
 
@@ -46,54 +47,41 @@ var _ = Describe("resolver", func() {
 			It("resolves each parameter value by looking for a binding for its type", func() {
 
 				street := "731 Market St."
-				city := city{name: "San Francisco"}
-				state := state{name: "California"}
+				sf := city{name: "San Francisco"}
+				california := state{name: "California"}
 				zip := zipcode{code: "94110"}
 
-				addressType := reflect.TypeOf(address{})
+				Bind(resolver, Key[string]("street"), street)
+				Bind(resolver, TypeKey[state](), california)
+				Bind(resolver, TypeKey[zipcode](), zip)
 
-				resolver.Bind(reflect.TypeOf(street), street)
-				resolver.Bind(reflect.TypeOf(city), city)
-				resolver.Bind(reflect.TypeOf(state), state)
-				resolver.Bind(reflect.TypeOf(zip), zip)
+				BindToFunction4Args(
+					resolver, 
+					TypeKey[address](), 
+					newAddress,
+					ArgKey("street"),
+					ArgValue(sf),
+					ArgType[state](),
+					ArgType[zipcode](),
+				)
 
-				resolver.BindToFunction(addressType, newAddress)
-
-				Expect(resolver.Resolve(addressType)).To(Equal(newAddress(street, city, state, zip)))
+				Expect(Resolve(resolver, TypeKey[address]())).To(Equal(newAddress(street, sf, california, zip)))
 			})
 		})
 
 		Context("when an input parameter has an interface type", func() {
 			It("it is able to resolve the interface binding", func() {
-				var x RandomInterface
+				var interfaceImpl RandomInterface
+				interfaceImpl = &RandomStruct{}
 
-				interfaceImpl := RandomStruct{}
-
-				typeOf := reflect.TypeOf(&x).Elem()
-
-				resolver.Bind(typeOf, &interfaceImpl)
-				resolver.BindToFunction("foo", functionWithInterfaceParameter)
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithInterfaceParameter(&interfaceImpl)))
-			})
-		})
-
-		Context("with argument specs", func() {
-			It("it resolves the arguments using the specs", func() {
-				street := "731 Market St."
-				city := city{name: "San Francisco"}
-				state := state{name: "California"}
-				zip := zipcode{code: "94110"}
-
-				addressType := reflect.TypeOf(address{})
-
-				resolver.Bind(reflect.TypeOf(street), street)
-				resolver.Bind("city", city)
-
-				argSpecs := []ArgSpec{UseArgType(), ArgKey("city"), ArgValue(state), ArgValue(zip)}
-
-				resolver.BindToFunctionWithArgSpecs(addressType, newAddress, argSpecs)
-
-				Expect(resolver.Resolve(addressType)).To(Equal(newAddress(street, city, state, zip)))
+				Bind(resolver, TypeKey[RandomInterface](), interfaceImpl)
+				BindToFunction1Arg(
+					resolver, 
+					Key[string]("foo"), 
+					functionWithInterfaceParameter, 
+					ArgType[RandomInterface](),
+				)
+				Expect(Resolve(resolver, Key[string]("foo"))).To(Equal(functionWithInterfaceParameter(interfaceImpl)))
 			})
 		})
 	})
@@ -101,62 +89,16 @@ var _ = Describe("resolver", func() {
 	Describe("binding to an interface type", func() {
 		Context("when the binding value implements the interace", func() {
 			It("successfully binds", func() {
-				var x RandomInterface
-				interfaceType := reflect.TypeOf(&x).Elem()
 		
-				pointerToRandomStruct := &RandomStruct{
+				var pointerToRandomStruct RandomInterface
+				pointerToRandomStruct = &RandomStruct{
 					name: "foo",
 				}
 
-				structPointerType := reflect.TypeOf(pointerToRandomStruct)
-
-				Expect(structPointerType.Implements(interfaceType)).To(BeTrue())
-				
-				resolver.Bind(interfaceType, pointerToRandomStruct)
-				Expect(resolver.Resolve(interfaceType)).To(Equal(pointerToRandomStruct))
+				Bind(resolver, TypeKey[RandomInterface](), pointerToRandomStruct)
+				Expect(Resolve(resolver, TypeKey[RandomInterface]())).To(Equal(pointerToRandomStruct))
 			})		
-		})
-
-		Context("when the binding value does not implement the interace", func() {
-			It("panics", func() {
-				var x RandomInterface
-				interfaceType := reflect.TypeOf(&x).Elem()
-		
-				emptyStruct := EmptyStruct{}
-				emptyStructType := reflect.TypeOf(emptyStruct)
-
-				Expect(emptyStructType.Implements(interfaceType)).To(BeFalse())
-				
-				Expect(func(){resolver.Bind(interfaceType, emptyStruct)}).To(Panic())
-			})		
-		})		
-	})
-
-	Describe("BindInterface()", func() {
-		Context("When the key is not a reflect.Type", func() {
-			It("panics", func() {
-				notAType := "not a type"
-				Expect(func(){BindInterface(resolver, notAType, "value")}).To(Panic())
-			})
-		})
-
-		Context("When the key is not an interface type", func() {
-			It("panics", func() {
-				notAnInterface := RandomStruct{}
-				Expect(func(){BindInterface(resolver, notAnInterface, notAnInterface)}).To(Panic())
-			})
-		})
-
-		Context("When the value implements the interface", func() {
-			It("successfully binds", func() {
-				var interfaceImpl RandomInterface
-				interfaceImpl = &RandomStruct{}
-				// BindInterface(resolver, interfaceType, EmptyStruct{})
-				BindInterface(resolver, interfaceImpl, interfaceImpl)
-				resolver.BindToFunction("foo", functionWithInterfaceParameter)
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithInterfaceParameter(interfaceImpl)))
-			})
-		})
+		})	
 	})
 
 	Describe("BindTypeToInstance()", func() {
@@ -171,30 +113,35 @@ var _ = Describe("resolver", func() {
 			It("successfully binds", func() {
 				randomStruct := RandomStruct{}
 				BindTypeToInstance(resolver, randomStruct)
-				resolver.BindToFunction("foo", functionWithStructParameter)
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithStructParameter(randomStruct)))
+				BindToFunction1Arg(
+					resolver,
+					Key[RandomStruct]("foo"),
+					functionWithStructParameter,
+					ArgType[RandomStruct](),
+				)
+				Expect(Resolve(resolver, Key[RandomStruct]("foo"))).To(Equal(functionWithStructParameter(randomStruct)))
 			})
 		})
 
-		Context("when the value is a struct pointer", func() {
-			It("successfully binds", func() {
-				structPointer := &RandomStruct{}
-				BindTypeToInstance(resolver, structPointer)
-				resolver.BindToFunction("foo", functionWithStructPointerParameter)
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithStructPointerParameter(structPointer)))
-			})
-		})
+		// Context("when the value is a struct pointer", func() {
+		// 	It("successfully binds", func() {
+		// 		structPointer := &RandomStruct{}
+		// 		BindTypeToInstance(resolver, structPointer)
+		// 		BindToFunction(resolver, Key[*RandomStruct]("foo"), functionWithStructPointerParameter)
+		// 		Expect(Resolve(resolver, Key[*RandomStruct]("foo"))).To(Equal(functionWithStructPointerParameter(structPointer)))
+		// 	})
+		// })
 
-		Context("when the value is a channel", func() {
-			It("successfully binds", func() {
-				channel := make(chan string)
-				wrongChannelType := make(chan int)
-				BindTypeToInstance(resolver, channel)
-				BindTypeToInstance(resolver, wrongChannelType)
-				resolver.BindToFunction("foo", functionWithChanParameter)
-				Expect(resolver.Resolve("foo")).To(Equal(functionWithChanParameter(channel)))
-			})
-		})
+		// Context("when the value is a channel", func() {
+		// 	It("successfully binds", func() {
+		// 		channel := make(chan string)
+		// 		wrongChannelType := make(chan int)
+		// 		BindTypeToInstance(resolver, channel)
+		// 		BindTypeToInstance(resolver, wrongChannelType)
+		// 		BindToFunction(resolver, Key[chan string]("foo"), functionWithChanParameter)
+		// 		Expect(Resolve(resolver, Key[chan string]("foo"))).To(Equal(functionWithChanParameter(channel)))
+		// 	})
+		// })
 
 		// Context("when the value is a parameterized type", func() {
 		// 	It("respects the typing", func() {
@@ -203,8 +150,35 @@ var _ = Describe("resolver", func() {
 		// 		BindTypeToInstance(resolver, channel)
 		// 		BindTypeToInstance(resolver, wrongChannelType)
 		// 		resolver.BindToFunction("foo", functionWithChanParameter)
-		// 		Expect(resolver.Resolve("foo")).To(Equal(functionWithChanParameter(channel)))
+		// 		Expect(Resolve(resolver, "foo")).To(Equal(functionWithChanParameter(channel)))
 		// 	})
 		// })
 	})
+
+	// Describe("Binding providers with arguments", func() {
+	// 	It("works", func() {
+	// 		street := "Guerrero St."
+	// 		city := city{name: "San Francisco"}
+	// 		california := state{name: "California"}
+	// 		zip := zipcode{code: "94110"}
+
+	// 		expectedAddress := newAddress(street, city, california, zip)
+
+	// 		var provider Provider2Args[address, state, zipcode]
+
+	// 		BindProvider2ArgsToFunction4Args(
+	// 			resolver, 
+	// 			newAddress, 
+	// 			city, 
+	// 			street,
+	// 			DynamicArg[state](),
+	// 			DynamicArg[zipcode](),
+	// 		)
+
+	// 		provider = Resolve(resolver, TypeKey[Provider2Args[address, state, zipcode]]())
+
+	// 		Expect(provider.Get(california, zip)).To(Equal(expectedAddress))
+			
+	// 	})
+	// })
 })

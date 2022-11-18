@@ -1,93 +1,151 @@
 package givv
 
-import (
-	"reflect"
-)
+type FunctionProvider[T any] struct {
+	function func() T
+}
 
-type FunctionProvider struct {
-	function any
-	typeOf   reflect.Type
-	valueOf  reflect.Value
+func NewFunctionProvider[T any](function func() T) Provider[T] {
+	return FunctionProvider[T]{function: function}
+}
+
+func(provider FunctionProvider[T]) Get() T {
+	return provider.function()
+}
+
+// ----------------
+
+type Function1ArgProvider[T any, A any] struct {
 	resolver *Resolver
-	argSpecs []ArgSpec
+	function func(A) T
+	argSpec ArgSpec[A]
 }
 
-func NewFunctionProvider(resolver *Resolver, function any) *FunctionProvider{
-	provider := &FunctionProvider{
-		function: function,
-		typeOf: reflect.TypeOf(function),
-		valueOf: reflect.ValueOf(function),
+func NewFunction1ArgProvider[T any, A any](resolver *Resolver, function func(A) T, arg ArgSpec[A]) Provider[T] {
+	return Function1ArgProvider[T, A]{
 		resolver: resolver,
-		argSpecs: []ArgSpec{},
-	}
-
-	argCount := argumentCount(function)
-	for index := 0; index < argCount; index++ {
-		provider.argSpecs = append(provider.argSpecs, UseArgType())
-	}
-
-	return provider
-}
-
-func NewFunctionProviderWithArgSpecs(resolver *Resolver, function any, argSpecs []ArgSpec) *FunctionProvider{
-	if !isFunction(function) {
-		givvPanic("function argument %+v is not actually a function", function)
-	}
-
-	if argumentCount(function) < len(argSpecs) {
-		givvPanic("too many argument specs: %+v for function: %+v", argSpecs, function)
-	}
-
-	if argumentCount(function) > len(argSpecs) {
-		givvPanic("too few argument specs: %+v for function: %+v", argSpecs, function)
-	}
-
-	return &FunctionProvider{
 		function: function,
-		typeOf: reflect.TypeOf(function),
-		valueOf: reflect.ValueOf(function),
+		argSpec: arg,
+	}
+}
+
+func(provider Function1ArgProvider[T, A]) Get() T {
+	val := provider.argSpec.resolve(provider.resolver)
+	return provider.function(val)
+}
+
+// -----------------
+
+type Function2ArgsProvider[T any, A1 any, A2 any] struct {
+	resolver *Resolver
+	function func(A1, A2) T
+	arg1 ArgSpec[A1]
+	arg2 ArgSpec[A2]
+}
+
+func NewFunction2ArgsProvider[T any, A1 any, A2 any](
+	resolver *Resolver, 
+	function func(A1, A2) T, 
+	arg1 ArgSpec[A1],
+	arg2 ArgSpec[A2],
+	) Provider[T] {
+
+	return Function2ArgsProvider[T, A1, A2]{
 		resolver: resolver,
-		argSpecs: argSpecs,
+		function: function,
+		arg1: arg1,
+		arg2: arg2,
 	}
 }
 
-func (provider *FunctionProvider) Get() any {
-	inValues := provider.inValues()
-	// fmt.Printf("inValues: %+v\n", inValues)
-	// fmt.Printf("valueOf: %+v", provider.valueOf)
-	// fmt.Printf("typeOf: %+v", provider.typeOf)
-	return provider.valueOf.Call(inValues)[0].Interface()
+func(provider Function2ArgsProvider[T, A1, A2]) Get() T {
+
+	val1 := provider.arg1.resolve(provider.resolver)
+	val2 := provider.arg2.resolve(provider.resolver)
+
+	return provider.function(val1, val2)
 }
 
-func (provider *FunctionProvider) inValues() []reflect.Value {
-	numIn := provider.typeOf.NumIn()
-	inValues := []reflect.Value{}
+// -----------------
 
-	for i := 0; i < numIn; i++ {
-		inType := provider.typeOf.In(i)
-		argSpec := provider.argSpecs[i]
-		paramValue := argSpec.resolve(provider.resolver, inType)
-		inValues = append(inValues, reflect.ValueOf(paramValue))
+type Function3ArgsProvider[T any, A1 any, A2 any, A3 any] struct {
+	resolver *Resolver
+	function func(A1, A2, A3) T
+	arg1 ArgSpec[A1]
+	arg2 ArgSpec[A2]
+	arg3 ArgSpec[A3]
+}
+
+func NewFunction3ArgsProvider[T any, A1 any, A2 any, A3 any](
+	resolver *Resolver, 
+	function func(A1, A2, A3) T, 
+	arg1 ArgSpec[A1],
+	arg2 ArgSpec[A2],
+	arg3 ArgSpec[A3],
+	) Provider[T] {
+
+	return Function3ArgsProvider[T, A1, A2, A3]{
+		resolver: resolver,
+		function: function,
+		arg1: arg1,
+		arg2: arg2,
+		arg3: arg3,
 	}
-
-	return inValues
 }
 
-func (provider *FunctionProvider) isEqual(otherProvider *FunctionProvider) bool {
-	argsEqual := reflect.DeepEqual(provider.argSpecs, otherProvider.argSpecs)
-	functionsEqual := reflect.ValueOf(provider.function).Pointer() == reflect.ValueOf(otherProvider.function).Pointer()
+func(provider Function3ArgsProvider[T, A1, A2, A3]) Get() T {
 
-	return argsEqual && functionsEqual 
+	val1 := provider.arg1.resolve(provider.resolver)
+	val2 := provider.arg2.resolve(provider.resolver)
+	val3 := provider.arg3.resolve(provider.resolver)
+
+	return provider.function(val1, val2, val3)
 }
 
-func isFunction(maybeFunction any) bool {
-	typeOf := reflect.TypeOf(maybeFunction)
-	
-	return typeOf.Kind() == reflect.Func
+// -----------------
+
+type Function4ArgsProvider[T any, A1 any, A2 any, A3 any, A4 any] struct {
+	resolver *Resolver
+	function func(A1, A2, A3, A4) T
+	arg1 ArgSpec[A1]
+	arg2 ArgSpec[A2]
+	arg3 ArgSpec[A3]
+	arg4 ArgSpec[A4]
 }
 
-func argumentCount(function any) int {
-	typeOf := reflect.TypeOf(function)
+func NewFunction4ArgsProvider[T any, A1 any, A2 any, A3 any, A4 any](
+	resolver *Resolver, 
+	function func(A1, A2, A3, A4) T, 
+	arg1 ArgSpec[A1],
+	arg2 ArgSpec[A2],
+	arg3 ArgSpec[A3],
+	arg4 ArgSpec[A4],
+	) Provider[T] {
 
-	return typeOf.NumIn()
+	return Function4ArgsProvider[T, A1, A2, A3, A4]{
+		resolver: resolver,
+		function: function,
+		arg1: arg1,
+		arg2: arg2,
+		arg3: arg3,
+		arg4: arg4,
+	}
 }
+
+func(provider Function4ArgsProvider[T, A1, A2, A3, A4]) Get() T {
+
+	val1 := provider.arg1.resolve(provider.resolver)
+	val2 := provider.arg2.resolve(provider.resolver)
+	val3 := provider.arg3.resolve(provider.resolver)
+	val4 := provider.arg4.resolve(provider.resolver)
+
+	return provider.function(val1, val2, val3, val4)
+}
+
+
+
+
+
+
+
+
+

@@ -83,3 +83,7 @@ func functionWithChanParameter(channel chan(string)) chan(string) {
 	return channel
 }
 
+func functionWithProvider2Arg(street string, city city, provider Provider2Args[address, state, zipcode]) *address {
+	return nil
+}
+
