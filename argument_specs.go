@@ -12,7 +12,9 @@ type argValue[T any] struct{
 }
 
 func ArgValue[T any](value T) ArgSpec[T]{
-	return argValue[T]{value: value}
+	return argValue[T]{
+		value: value,
+	}
 }
 
 func (argValue argValue[T]) resolve(resolver *Resolver) T {
@@ -25,25 +27,27 @@ func (argValue argValue[T]) setValue(T) {
 
 // ----------
 
-type argKey[T any] struct {
-	key key[T]
+type argKey[T any, K any] struct {
+	key key[T, K]
 }
 
-func ArgKey[T any](keyValue T) ArgSpec[T] {
-	return argKey[T]{key: Key[T](keyValue)}
+func ArgKey[T any, K any](keyValue K) ArgSpec[T] {
+	return argKey[T, K]{
+		key: Key[T](keyValue),
+	}
 }
 
-func (argKey argKey[T]) resolve(resolver *Resolver) T {
+func (argKey argKey[T, K]) resolve(resolver *Resolver) T {
 	return Resolve(resolver, argKey.key)
 }
 
-func (argValue argKey[T]) setValue(T) {
+func (argValue argKey[T, K]) setValue(T) {
 }
 
 // ----------
 
 type argType[T any] struct {
-	key key[T]
+	key key[T, T]
 }
 
 func ArgType[T any]() ArgSpec[T] {

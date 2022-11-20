@@ -15,14 +15,14 @@ var _ = Describe("resolver", func() {
 	It("can bind a Type to an instance", func() {
 		instance := &RandomStruct{}
 		key := TypeKey[*RandomStruct]()
-		Bind(resolver, key, instance)
+		BindToInstance(resolver, key, instance)
 		Expect(Resolve(resolver, key)).To(Equal(instance))
 	})
 
 	It("can bind a string to an instance", func() {
 		instance := &RandomStruct{}
 		key := Key[*RandomStruct]("random string")
-		Bind(resolver, key, instance)
+		BindToInstance(resolver, key, instance)
 		Expect(Resolve(resolver, key)).To(Equal(instance))
 	})
 
@@ -37,8 +37,8 @@ var _ = Describe("resolver", func() {
 
 		Context("when the function has one input parameter", func() {
 			It("resolves the parameter value by looking for a binding for its type", func() {
-				BindToFunction1Arg(resolver, TypeKey[string](), functionWithOneInputParameter, ArgKey("hello"))
-				Bind(resolver, Key[string]("hello"), "hello")
+				BindToFunction1Arg(resolver, TypeKey[string](), functionWithOneInputParameter, ArgKey[string]("hello"))
+				BindToInstance(resolver, Key[string]("hello"), "hello")
 				Expect(Resolve(resolver, TypeKey[string]())).To(Equal(functionWithOneInputParameter("hello")))
 			})
 		})
@@ -51,15 +51,15 @@ var _ = Describe("resolver", func() {
 				california := state{name: "California"}
 				zip := zipcode{code: "94110"}
 
-				Bind(resolver, Key[string]("street"), street)
-				Bind(resolver, TypeKey[state](), california)
-				Bind(resolver, TypeKey[zipcode](), zip)
+				BindToInstance(resolver, Key[string]("street"), street)
+				BindToInstance(resolver, TypeKey[state](), california)
+				BindToInstance(resolver, TypeKey[zipcode](), zip)
 
 				BindToFunction4Args(
 					resolver, 
 					TypeKey[address](), 
 					newAddress,
-					ArgKey("street"),
+					ArgKey[string]("street"),
 					ArgValue(sf),
 					ArgType[state](),
 					ArgType[zipcode](),
@@ -74,7 +74,7 @@ var _ = Describe("resolver", func() {
 				var interfaceImpl RandomInterface
 				interfaceImpl = &RandomStruct{}
 
-				Bind(resolver, TypeKey[RandomInterface](), interfaceImpl)
+				BindToInstance(resolver, TypeKey[RandomInterface](), interfaceImpl)
 				BindToFunction1Arg(
 					resolver, 
 					Key[string]("foo"), 
@@ -95,7 +95,7 @@ var _ = Describe("resolver", func() {
 					name: "foo",
 				}
 
-				Bind(resolver, TypeKey[RandomInterface](), pointerToRandomStruct)
+				BindToInstance(resolver, TypeKey[RandomInterface](), pointerToRandomStruct)
 				Expect(Resolve(resolver, TypeKey[RandomInterface]())).To(Equal(pointerToRandomStruct))
 			})		
 		})	
@@ -105,14 +105,14 @@ var _ = Describe("resolver", func() {
 		Context("when the value is nil", func() {
 			It("panics", func() {
 				var nilPointer *RandomStruct
-				Expect(func(){BindTypeToInstance(resolver, nilPointer)}).To(Panic())
+				Expect(func(){BindInstanceTypeToInstance(resolver, nilPointer)}).To(Panic())
 			})
 		})
 
 		Context("when the value is a struct", func() {
 			It("successfully binds", func() {
 				randomStruct := RandomStruct{}
-				BindTypeToInstance(resolver, randomStruct)
+				BindInstanceTypeToInstance(resolver, randomStruct)
 				BindToFunction1Arg(
 					resolver,
 					Key[RandomStruct]("foo"),
@@ -123,62 +123,22 @@ var _ = Describe("resolver", func() {
 			})
 		})
 
-		// Context("when the value is a struct pointer", func() {
-		// 	It("successfully binds", func() {
-		// 		structPointer := &RandomStruct{}
-		// 		BindTypeToInstance(resolver, structPointer)
-		// 		BindToFunction(resolver, Key[*RandomStruct]("foo"), functionWithStructPointerParameter)
-		// 		Expect(Resolve(resolver, Key[*RandomStruct]("foo"))).To(Equal(functionWithStructPointerParameter(structPointer)))
-		// 	})
-		// })
+		Describe("automatic providers", func() {
+			Context("when all parameter types are resolvable", func() {
+				It("provides a provider", func() {
 
-		// Context("when the value is a channel", func() {
-		// 	It("successfully binds", func() {
-		// 		channel := make(chan string)
-		// 		wrongChannelType := make(chan int)
-		// 		BindTypeToInstance(resolver, channel)
-		// 		BindTypeToInstance(resolver, wrongChannelType)
-		// 		BindToFunction(resolver, Key[chan string]("foo"), functionWithChanParameter)
-		// 		Expect(Resolve(resolver, Key[chan string]("foo"))).To(Equal(functionWithChanParameter(channel)))
-		// 	})
-		// })
+					BindToInstance(resolver, Key[string](1), "one")
+					BindToInstance(resolver, Key[string](2), "two")
 
-		// Context("when the value is a parameterized type", func() {
-		// 	It("respects the typing", func() {
-		// 		rightMap := 
-		// 		wrongChannelType := make(chan int)
-		// 		BindTypeToInstance(resolver, channel)
-		// 		BindTypeToInstance(resolver, wrongChannelType)
-		// 		resolver.BindToFunction("foo", functionWithChanParameter)
-		// 		Expect(Resolve(resolver, "foo")).To(Equal(functionWithChanParameter(channel)))
-		// 	})
-		// })
+					BindProvider1Arg[string, int](resolver)
+
+					type providerType = Provider1Arg[string, int]
+					provider := Resolve(resolver, TypeKey[providerType]())
+
+					Expect(provider.Get(1)).To(Equal("one"))		
+					Expect(provider.Get(2)).To(Equal("two"))		
+				})
+			})
+		})
 	})
-
-	// Describe("Binding providers with arguments", func() {
-	// 	It("works", func() {
-	// 		street := "Guerrero St."
-	// 		city := city{name: "San Francisco"}
-	// 		california := state{name: "California"}
-	// 		zip := zipcode{code: "94110"}
-
-	// 		expectedAddress := newAddress(street, city, california, zip)
-
-	// 		var provider Provider2Args[address, state, zipcode]
-
-	// 		BindProvider2ArgsToFunction4Args(
-	// 			resolver, 
-	// 			newAddress, 
-	// 			city, 
-	// 			street,
-	// 			DynamicArg[state](),
-	// 			DynamicArg[zipcode](),
-	// 		)
-
-	// 		provider = Resolve(resolver, TypeKey[Provider2Args[address, state, zipcode]]())
-
-	// 		Expect(provider.Get(california, zip)).To(Equal(expectedAddress))
-			
-	// 	})
-	// })
 })

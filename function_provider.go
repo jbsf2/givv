@@ -5,7 +5,9 @@ type FunctionProvider[T any] struct {
 }
 
 func NewFunctionProvider[T any](function func() T) Provider[T] {
-	return FunctionProvider[T]{function: function}
+	return FunctionProvider[T]{
+		function: function,
+	}
 }
 
 func(provider FunctionProvider[T]) Get() T {
