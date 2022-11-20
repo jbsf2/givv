@@ -123,62 +123,21 @@ var _ = Describe("resolver", func() {
 			})
 		})
 
-		// Context("when the value is a struct pointer", func() {
-		// 	It("successfully binds", func() {
-		// 		structPointer := &RandomStruct{}
-		// 		BindTypeToInstance(resolver, structPointer)
-		// 		BindToFunction(resolver, Key[*RandomStruct]("foo"), functionWithStructPointerParameter)
-		// 		Expect(Resolve(resolver, Key[*RandomStruct]("foo"))).To(Equal(functionWithStructPointerParameter(structPointer)))
-		// 	})
-		// })
+		Describe("automatic providers", func() {
+			Context("when all parameter types are resolvable", func() {
+				It("provides a provider", func() {
 
-		// Context("when the value is a channel", func() {
-		// 	It("successfully binds", func() {
-		// 		channel := make(chan string)
-		// 		wrongChannelType := make(chan int)
-		// 		BindTypeToInstance(resolver, channel)
-		// 		BindTypeToInstance(resolver, wrongChannelType)
-		// 		BindToFunction(resolver, Key[chan string]("foo"), functionWithChanParameter)
-		// 		Expect(Resolve(resolver, Key[chan string]("foo"))).To(Equal(functionWithChanParameter(channel)))
-		// 	})
-		// })
+					Bind(resolver, Key[string](1), "one")
+					Bind(resolver, Key[string](2), "two")
 
-		// Context("when the value is a parameterized type", func() {
-		// 	It("respects the typing", func() {
-		// 		rightMap := 
-		// 		wrongChannelType := make(chan int)
-		// 		BindTypeToInstance(resolver, channel)
-		// 		BindTypeToInstance(resolver, wrongChannelType)
-		// 		resolver.BindToFunction("foo", functionWithChanParameter)
-		// 		Expect(Resolve(resolver, "foo")).To(Equal(functionWithChanParameter(channel)))
-		// 	})
-		// })
+					type providerType = Provider1Arg[string, int]
+
+					provider := Resolve(resolver, TypeKey[providerType]())
+
+					Expect(provider.Get(1)).To(Equal("one"))		
+					Expect(provider.Get(2)).To(Equal("two"))		
+				})
+			})
+		})
 	})
-
-	// Describe("Binding providers with arguments", func() {
-	// 	It("works", func() {
-	// 		street := "Guerrero St."
-	// 		city := city{name: "San Francisco"}
-	// 		california := state{name: "California"}
-	// 		zip := zipcode{code: "94110"}
-
-	// 		expectedAddress := newAddress(street, city, california, zip)
-
-	// 		var provider Provider2Args[address, state, zipcode]
-
-	// 		BindProvider2ArgsToFunction4Args(
-	// 			resolver, 
-	// 			newAddress, 
-	// 			city, 
-	// 			street,
-	// 			DynamicArg[state](),
-	// 			DynamicArg[zipcode](),
-	// 		)
-
-	// 		provider = Resolve(resolver, TypeKey[Provider2Args[address, state, zipcode]]())
-
-	// 		Expect(provider.Get(california, zip)).To(Equal(expectedAddress))
-			
-	// 	})
-	// })
 })

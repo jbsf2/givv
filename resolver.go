@@ -40,8 +40,16 @@ func NewResolver() *Resolver {
 	}
 }
 
+
 func Resolve[T any](resolver *Resolver, key key[T]) T {
-	return resolver.providers[key].(Provider[T]).Get()
+	provider := resolver.providers[key]
+	if (provider == nil) {
+		automaticProvider := automaticProvider(resolver, key)
+		if automaticProvider != nil {
+			provider = automaticProvider
+		}
+	}
+	return provider.(Provider[T]).Get()
 }
 
 func Bind[T any](resolver *Resolver, key key[T], value T) {
@@ -70,6 +78,10 @@ func BindToFunction1Arg[T any, A any](resolver *Resolver, key key[T], function f
 	resolver.providers[key] = NewFunction1ArgProvider(resolver, function, arg)
 }
 
+func BindToFunction1ArgErr[T any, A any](resolver *Resolver, key key[T], function func(A) (T, error), arg ArgSpec[A]) {
+	resolver.providers[key] = NewFunction1ArgErrProvider(resolver, function, arg)
+}
+
 func BindToFunction2Args[T any, A1 any, A2 any](
 	resolver *Resolver, 
 	key key[T], 
@@ -93,6 +105,23 @@ func BindToFunction4Args[T any, A1 any, A2 any, A3 any, A4 any](
 
 	resolver.providers[key] = NewFunction4ArgsProvider(resolver, function, arg1, arg2, arg3, arg4)
 }
+
+func automaticProvider[T any](resolver *Resolver, key key[T]) (T, bool) {
+	switch key.keyValue {
+	// case TypeKey[Provider[T]]():
+	// 	return automaticProviderNoArgs[T](resolver), true
+	case TypeKey[Provider1Arg[T, A]]():
+		return automaticProvider1Arg[T, A](resolver), true
+	}
+
+	var x T
+	return reflect.TypeOf(&x).Elem().(T), false
+}
+
+func automaticProvider1Arg[T any](resolver *Resolver) T {
+
+}
+
 
 func isNil[T any](value T) bool {
 	return reflect.ValueOf(value).IsNil()
