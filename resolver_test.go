@@ -37,7 +37,7 @@ var _ = Describe("resolver", func() {
 
 		Context("when the function has one input parameter", func() {
 			It("resolves the parameter value by looking for a binding for its type", func() {
-				BindToFunction1Arg(resolver, TypeKey[string](), functionWithOneInputParameter, ArgKey("hello"))
+				BindToFunction1Arg(resolver, TypeKey[string](), functionWithOneInputParameter, ArgKey[string]("hello"))
 				Bind(resolver, Key[string]("hello"), "hello")
 				Expect(Resolve(resolver, TypeKey[string]())).To(Equal(functionWithOneInputParameter("hello")))
 			})
@@ -59,7 +59,7 @@ var _ = Describe("resolver", func() {
 					resolver, 
 					TypeKey[address](), 
 					newAddress,
-					ArgKey("street"),
+					ArgKey[string]("street"),
 					ArgValue(sf),
 					ArgType[state](),
 					ArgType[zipcode](),
@@ -131,6 +131,8 @@ var _ = Describe("resolver", func() {
 					Bind(resolver, Key[string](2), "two")
 
 					type providerType = Provider1Arg[string, int]
+
+					BindProvider1Arg[string, int](resolver)
 
 					provider := Resolve(resolver, TypeKey[providerType]())
 

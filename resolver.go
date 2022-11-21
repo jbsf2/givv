@@ -6,19 +6,19 @@ import (
 
 type any interface{}
 
-type key[T any] struct {
-	keyValue any
+type key[T any, KT any] struct {
+	key any
 }
 
-func Key[T any](keyValue any) key[T] {
-	return key[T]{keyValue: keyValue}
+func Key[T any, KT any](keyValue KT) key[T, KT] {
+	return key[T, KT]{key: keyValue}
 }
 
-func TypeKey[T any]() key[T] {
-	var value T
+func TypeKey[T any]() key[T, T] {
+	var keyValue T
 
-	return key[T]{
-		keyValue: reflect.TypeOf(&value).Elem(),
+	return key[T, T]{
+		key: reflect.TypeOf(&keyValue).Elem(),
 	}
 }
 
@@ -40,19 +40,12 @@ func NewResolver() *Resolver {
 	}
 }
 
-
-func Resolve[T any](resolver *Resolver, key key[T]) T {
+func Resolve[T any, KT any](resolver *Resolver, key key[T, KT]) T {
 	provider := resolver.providers[key]
-	if (provider == nil) {
-		automaticProvider := automaticProvider(resolver, key)
-		if automaticProvider != nil {
-			provider = automaticProvider
-		}
-	}
 	return provider.(Provider[T]).Get()
 }
 
-func Bind[T any](resolver *Resolver, key key[T], value T) {
+func Bind[T any, KT any](resolver *Resolver, key key[T, KT], value T) {
 	typeOf := reflect.TypeOf(value)
 
 	if isNilable(typeOf) && isNil(value) {
@@ -70,21 +63,17 @@ func BindTypeToProvider[T any](resolver *Resolver, provider Provider[T]) {
 	resolver.providers[TypeKey[T]()] = provider
 }
 
-func BindToFunction[T any](resolver *Resolver, key key[T], function func() T) {
+func BindToFunction[T any, KT any](resolver *Resolver, key key[T, KT], function func() T) {
 	resolver.providers[key] = NewFunctionProvider(function)
 }
 
-func BindToFunction1Arg[T any, A any](resolver *Resolver, key key[T], function func(A) T, arg ArgSpec[A]) {
+func BindToFunction1Arg[T any, KT any, A any](resolver *Resolver, key key[T, KT], function func(A) T, arg ArgSpec[A]) {
 	resolver.providers[key] = NewFunction1ArgProvider(resolver, function, arg)
 }
 
-func BindToFunction1ArgErr[T any, A any](resolver *Resolver, key key[T], function func(A) (T, error), arg ArgSpec[A]) {
-	resolver.providers[key] = NewFunction1ArgErrProvider(resolver, function, arg)
-}
-
-func BindToFunction2Args[T any, A1 any, A2 any](
+func BindToFunction2Args[T any, KT any, A1 any, A2 any](
 	resolver *Resolver, 
-	key key[T], 
+	key key[T, KT], 
 	function func(A1, A2) T,
 	arg1 ArgSpec[A1],
 	arg2 ArgSpec[A2],
@@ -93,9 +82,9 @@ func BindToFunction2Args[T any, A1 any, A2 any](
 	resolver.providers[key] = NewFunction2ArgsProvider(resolver, function, arg1, arg2)
 }
 
-func BindToFunction4Args[T any, A1 any, A2 any, A3 any, A4 any](
+func BindToFunction4Args[T any, KT any, A1 any, A2 any, A3 any, A4 any](
 	resolver *Resolver, 
-	key key[T], 
+	key key[T, KT], 
 	function func(A1, A2, A3, A4) T,
 	arg1 ArgSpec[A1],
 	arg2 ArgSpec[A2],
@@ -106,22 +95,15 @@ func BindToFunction4Args[T any, A1 any, A2 any, A3 any, A4 any](
 	resolver.providers[key] = NewFunction4ArgsProvider(resolver, function, arg1, arg2, arg3, arg4)
 }
 
-func automaticProvider[T any](resolver *Resolver, key key[T]) (T, bool) {
-	switch key.keyValue {
-	// case TypeKey[Provider[T]]():
-	// 	return automaticProviderNoArgs[T](resolver), true
-	case TypeKey[Provider1Arg[T, A]]():
-		return automaticProvider1Arg[T, A](resolver), true
+func BindProvider1Arg[T any, A any](resolver *Resolver) {
+	var provider Provider1Arg[T, A]
+
+	provider = AutomaticProvider1Arg[T, A]{
+		resolver: resolver,
 	}
 
-	var x T
-	return reflect.TypeOf(&x).Elem().(T), false
+	BindTypeToInstance(resolver, provider)
 }
-
-func automaticProvider1Arg[T any](resolver *Resolver) T {
-
-}
-
 
 func isNil[T any](value T) bool {
 	return reflect.ValueOf(value).IsNil()

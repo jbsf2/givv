@@ -6,7 +6,7 @@ type Function1ArgProvider1Arg[T any, A any] struct {
 }
 
 func NewFunction1ArgProvider1Arg[T any, A any](resolver *Resolver, function func(A) T) Provider1Arg[T, A]{
-	return Function1ArgProvider1Arg{
+	return Function1ArgProvider1Arg[T, A]{
 		resolver, 
 		function,
 	}
