@@ -12,7 +12,6 @@ func NewFunction1ArgProvider1Arg[T any, A any](resolver *Resolver, function func
 	}
 }
 
-
 func(provider Function1ArgProvider1Arg[T, A]) Get(arg A) T {
 	return provider.function(arg)
 }

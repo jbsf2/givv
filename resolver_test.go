@@ -105,14 +105,14 @@ var _ = Describe("resolver", func() {
 		Context("when the value is nil", func() {
 			It("panics", func() {
 				var nilPointer *RandomStruct
-				Expect(func(){BindInstanceTypeToInstance(resolver, nilPointer)}).To(Panic())
+				Expect(func(){BindInstanceType(resolver, nilPointer)}).To(Panic())
 			})
 		})
 
 		Context("when the value is a struct", func() {
 			It("successfully binds", func() {
 				randomStruct := RandomStruct{}
-				BindInstanceTypeToInstance(resolver, randomStruct)
+				BindInstanceType(resolver, randomStruct)
 				BindToFunction1Arg(
 					resolver,
 					Key[RandomStruct]("foo"),
@@ -124,13 +124,13 @@ var _ = Describe("resolver", func() {
 		})
 
 		Describe("automatic providers", func() {
-			Context("when all parameter types are resolvable", func() {
+			Context("when the parameter type is resolvable", func() {
 				It("provides a provider", func() {
 
 					BindToInstance(resolver, Key[string](1), "one")
 					BindToInstance(resolver, Key[string](2), "two")
 
-					BindProvider1Arg[string, int](resolver)
+					BindAutomaticProvider[string, int](resolver)
 
 					type providerType = Provider1Arg[string, int]
 					provider := Resolve(resolver, TypeKey[providerType]())
