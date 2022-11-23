@@ -87,3 +87,19 @@ func functionWithProvider2Arg(street string, city city, provider Provider2Args[a
 	return nil
 }
 
+type A struct{}
+type B struct{}
+type C struct{}
+
+func functionAdependsB(b B) A {
+	return A{}
+}
+
+func functionBdependsC(c C) B {
+	return B{}
+}
+
+func functionCdependsA(a A) C {
+	return C{}
+}
+

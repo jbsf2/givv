@@ -10,7 +10,7 @@ func NewFunctionProvider[T any](function func() T) Provider[T] {
 	}
 }
 
-func(provider FunctionProvider[T]) Get() T {
+func (provider FunctionProvider[T]) Get() T {
 	return provider.function()
 }
 
@@ -31,8 +31,13 @@ func NewFunction1ArgProvider[T any, A any](resolver *Resolver, function func(A) 
 }
 
 func(provider Function1ArgProvider[T, A]) Get() T {
-	val := provider.argSpec.resolve(provider.resolver)
+	val := provider.argSpec.resolve(provider.resolver, newKeySlice())
 	return provider.function(val)
+}
+
+func (provider Function1ArgProvider[T, A]) getWithPreviousKeys(previousKeys []any) T {
+	val := provider.argSpec.resolve(provider.resolver, previousKeys)
+	return provider.function(val)	
 }
 
 // -----------------
@@ -61,8 +66,16 @@ func NewFunction2ArgsProvider[T any, A1 any, A2 any](
 
 func(provider Function2ArgsProvider[T, A1, A2]) Get() T {
 
-	val1 := provider.arg1.resolve(provider.resolver)
-	val2 := provider.arg2.resolve(provider.resolver)
+	val1 := provider.arg1.resolve(provider.resolver, newKeySlice())
+	val2 := provider.arg2.resolve(provider.resolver, newKeySlice())
+
+	return provider.function(val1, val2)
+}
+
+func(provider Function2ArgsProvider[T, A1, A2]) getWithPreviousKeys(previousKeys []any) T {
+
+	val1 := provider.arg1.resolve(provider.resolver, previousKeys)
+	val2 := provider.arg2.resolve(provider.resolver, previousKeys)
 
 	return provider.function(val1, val2)
 }
@@ -96,9 +109,18 @@ func NewFunction3ArgsProvider[T any, A1 any, A2 any, A3 any](
 
 func(provider Function3ArgsProvider[T, A1, A2, A3]) Get() T {
 
-	val1 := provider.arg1.resolve(provider.resolver)
-	val2 := provider.arg2.resolve(provider.resolver)
-	val3 := provider.arg3.resolve(provider.resolver)
+	val1 := provider.arg1.resolve(provider.resolver, newKeySlice())
+	val2 := provider.arg2.resolve(provider.resolver, newKeySlice())
+	val3 := provider.arg3.resolve(provider.resolver, newKeySlice())
+
+	return provider.function(val1, val2, val3)
+}
+
+func(provider Function3ArgsProvider[T, A1, A2, A3]) getWithPreviousKeys(previousKeys []any) T {
+
+	val1 := provider.arg1.resolve(provider.resolver, previousKeys)
+	val2 := provider.arg2.resolve(provider.resolver, previousKeys)
+	val3 := provider.arg3.resolve(provider.resolver, previousKeys)
 
 	return provider.function(val1, val2, val3)
 }
@@ -135,10 +157,20 @@ func NewFunction4ArgsProvider[T any, A1 any, A2 any, A3 any, A4 any](
 
 func(provider Function4ArgsProvider[T, A1, A2, A3, A4]) Get() T {
 
-	val1 := provider.arg1.resolve(provider.resolver)
-	val2 := provider.arg2.resolve(provider.resolver)
-	val3 := provider.arg3.resolve(provider.resolver)
-	val4 := provider.arg4.resolve(provider.resolver)
+	val1 := provider.arg1.resolve(provider.resolver, newKeySlice())
+	val2 := provider.arg2.resolve(provider.resolver, newKeySlice())
+	val3 := provider.arg3.resolve(provider.resolver, newKeySlice())
+	val4 := provider.arg4.resolve(provider.resolver, newKeySlice())
+
+	return provider.function(val1, val2, val3, val4)
+}
+
+func(provider Function4ArgsProvider[T, A1, A2, A3, A4]) getWithPreviousKeys(previousKeys []any) T {
+
+	val1 := provider.arg1.resolve(provider.resolver, previousKeys)
+	val2 := provider.arg2.resolve(provider.resolver, previousKeys)
+	val3 := provider.arg3.resolve(provider.resolver, previousKeys)
+	val4 := provider.arg4.resolve(provider.resolver, previousKeys)
 
 	return provider.function(val1, val2, val3, val4)
 }

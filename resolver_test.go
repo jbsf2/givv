@@ -167,4 +167,12 @@ var _ = Describe("resolver", func() {
 			})
 		})
 	})
+
+	It("detects dependency cycles", func() {
+		BindToFunction1Arg(resolver, TypeKey[A](), functionAdependsB, ArgType[B]())
+		BindToFunction1Arg(resolver, TypeKey[B](), functionBdependsC, ArgType[C]())
+		BindToFunction1Arg(resolver, TypeKey[C](), functionCdependsA, ArgType[A]())
+
+		Expect(func(){Resolve(resolver, TypeKey[C]())}).To(Panic())
+	})
 })

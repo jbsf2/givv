@@ -15,3 +15,7 @@ func Key[T any, K any](keyValue K) key[T, K] {
 func TypeKey[T any]() key[T, reflect.Type] {
 	return Key[T](reflectType[T]())
 }
+
+func newKeySlice() []any {
+	return []any{}
+}

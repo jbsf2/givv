@@ -41,7 +41,7 @@ func NewFunction2ArgsProvider1Arg[T any, FA any, PA any](
 }
 
 func(provider Function2ArgsProvider1Arg[T, FA, PA]) Get(arg PA) T {
-	val := provider.arg1.resolve(provider.resolver)
+	val := provider.arg1.resolve(provider.resolver, newKeySlice())
 
 	return provider.function(val, arg)
 }
@@ -74,8 +74,8 @@ func NewFunction3ArgsProvider1Arg[T any, FA1 any, FA2 any, PA any](
 }
 
 func(provider Function3ArgsProvider1Arg[T, FA1, FA2, PA]) Get(arg PA) T {
-	val1 := provider.arg1.resolve(provider.resolver)
-	val2 := provider.arg2.resolve(provider.resolver)
+	val1 := provider.arg1.resolve(provider.resolver, newKeySlice())
+	val2 := provider.arg2.resolve(provider.resolver, newKeySlice())
 
 	return provider.function(val1, val2, arg)
 }
@@ -111,9 +111,9 @@ func NewFunction4ArgsProvider1Arg[T any, FA1 any, FA2 any, FA3 any, PA any](
 }
 
 func(provider Function4ArgsProvider1Arg[T, FA1, FA2, FA3, PA]) Get(arg PA) T {
-	val1 := provider.arg1.resolve(provider.resolver)
-	val2 := provider.arg2.resolve(provider.resolver)
-	val3 := provider.arg3.resolve(provider.resolver)
+	val1 := provider.arg1.resolve(provider.resolver, newKeySlice())
+	val2 := provider.arg2.resolve(provider.resolver, newKeySlice())
+	val3 := provider.arg3.resolve(provider.resolver, newKeySlice())
 
 	return provider.function(val1, val2, val3, arg)
 }

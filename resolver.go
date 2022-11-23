@@ -4,6 +4,10 @@ import (
 	"reflect"
 )
 
+type providerWithCycleDetection[T any] interface {
+	getWithPreviousKeys(previousKeys []any) T
+}
+
 type Resolver struct {
 	providers map[any]any
 }
@@ -15,8 +19,36 @@ func NewResolver() *Resolver {
 }
 
 func Resolve[T any, K any](resolver *Resolver, key key[T, K]) T {
+	return resolveWithCycleDetection(resolver, key, []any{})
+}
+
+func resolveWithCycleDetection[T any, K any](resolver *Resolver, key key[T, K], previousKeys []any) T {
+
+	if hasCycle(key, previousKeys) {
+		givvPanic("Cycle detected resolving key: %+v", key)
+	}
+
 	provider := resolver.providers[key]
+
+	if hasCycleDetection[T](provider) {
+		return provider.(providerWithCycleDetection[T]).getWithPreviousKeys(append(previousKeys, key))
+	}
+	
 	return provider.(Provider[T]).Get()
+}
+
+func hasCycleDetection[T any](provider any) bool {
+	_, ok := provider.(providerWithCycleDetection[T])
+	return ok
+}
+
+func hasCycle(currentKey any, previousKeys []any) bool {
+	for _, key := range previousKeys {
+		if key == currentKey {
+			return true
+		}
+	}
+	return false
 }
 
 func Bind[T any, K any](resolver *Resolver, key key[T, K], provider Provider[T]) {
@@ -96,7 +128,8 @@ func BindAutomaticProvider[T any, A any](resolver *Resolver) {
 func isNil[T any](value T) bool {
 	valueOf := reflect.ValueOf(value)
 	typeOf := valueOf.Type()
-	return isNilable(typeOf) && reflect.ValueOf(value).IsNil()
+	
+	return isNilable(typeOf) && valueOf.IsNil()
 }
 
 func isNilable(reflectType reflect.Type) bool {

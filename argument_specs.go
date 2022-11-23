@@ -3,7 +3,7 @@ package givv
 import "reflect"
 
 type ArgSpec[T any] interface {
-	resolve(resolver *Resolver) T
+	resolve(resolver *Resolver, previousKeys []any) T
 	setValue(T)
 }
 
@@ -19,7 +19,7 @@ func ArgValue[T any](value T) ArgSpec[T]{
 	}
 }
 
-func (argValue argValue[T]) resolve(resolver *Resolver) T {
+func (argValue argValue[T]) resolve(resolver *Resolver, previousKeys []any) T {
 	return argValue.value
 }
 
@@ -39,8 +39,8 @@ func ArgKey[T any, K any](keyValue K) ArgSpec[T] {
 	}
 }
 
-func (argKey argKey[T, K]) resolve(resolver *Resolver) T {
-	return Resolve(resolver, argKey.key)
+func (argKey argKey[T, K]) resolve(resolver *Resolver, previousKeys []any) T {
+	return resolveWithCycleDetection(resolver, argKey.key, previousKeys)
 }
 
 func (argValue argKey[T, K]) setValue(T) {
@@ -58,8 +58,8 @@ func ArgType[T any]() ArgSpec[T] {
 	}
 }
 
-func (argType argType[T]) resolve(resolver *Resolver) T {
-	return Resolve(resolver, argType.key)
+func (argType argType[T]) resolve(resolver *Resolver, previousKeys []any) T {
+	return resolveWithCycleDetection(resolver, argType.key, previousKeys)
 }
 
 func (argType argType[T]) setValue(T) {
@@ -76,7 +76,7 @@ func DynamicArg[T any]() ArgSpec[T] {
 	return dynamicArg[T]{}
 }
 
-func (arg dynamicArg[T]) resolve(resolver *Resolver) T {
+func (arg dynamicArg[T]) resolve(resolver *Resolver, previousKeys []any) T {
 	return arg.value
 }
 
