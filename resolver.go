@@ -24,13 +24,23 @@ func Bind[T any, K any](resolver *Resolver, key key[T, K], provider Provider[T])
 }
 
 func BindToInstance[T any, K any](resolver *Resolver, key key[T, K], value T) {
-	typeOf := reflect.TypeOf(value)
 
-	if isNilable(typeOf) && isNil(value) {
-		givvPanic("Cannot use Bind() to bind to a nil value")
+	if isNil(value) {
+		givvPanic("Cannot use BindToInstance() to bind to a nil value. Use BindToNil() instead.")
 	}
 
-	Bind(resolver, key, NewInstanceProvider(value))
+	Bind(resolver, key, newInstanceProvider(value))
+}
+
+func BindToNil[T any, K any](resolver *Resolver, key key[T, K]) {
+
+	typeOf := reflectType[T]()
+
+	if !isNilable(typeOf) {
+		givvPanic("BindToNil received type that cannot be nil: %+v", typeOf)
+	}
+
+	Bind(resolver, key, newNilProvider[T]())
 }
 
 func BindInstanceType[T any](resolver *Resolver, instance T) {
@@ -84,7 +94,9 @@ func BindAutomaticProvider[T any, A any](resolver *Resolver) {
 }
 
 func isNil[T any](value T) bool {
-	return reflect.ValueOf(value).IsNil()
+	valueOf := reflect.ValueOf(value)
+	typeOf := valueOf.Type()
+	return isNilable(typeOf) && reflect.ValueOf(value).IsNil()
 }
 
 func isNilable(reflectType reflect.Type) bool {
@@ -99,6 +111,18 @@ func isNilable(reflectType reflect.Type) bool {
 	}
 
 	return false
+}
+
+type nilProvider[T any] struct{
+}
+
+func newNilProvider[T any]() Provider[T] {
+	return &nilProvider[T]{}
+}
+
+func (provider *nilProvider[T]) Get() T {
+	var t T
+	return t
 }
 
 

@@ -1,5 +1,7 @@
 package givv
 
+import "reflect"
+
 type ArgSpec[T any] interface {
 	resolve(resolver *Resolver) T
 	setValue(T)
@@ -47,11 +49,13 @@ func (argValue argKey[T, K]) setValue(T) {
 // ----------
 
 type argType[T any] struct {
-	key key[T, T]
+	key key[T, reflect.Type]
 }
 
 func ArgType[T any]() ArgSpec[T] {
-	return argType[T]{key: TypeKey[T]()}
+	return argType[T]{
+		key: TypeKey[T](),
+	}
 }
 
 func (argType argType[T]) resolve(resolver *Resolver) T {

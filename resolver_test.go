@@ -141,4 +141,30 @@ var _ = Describe("resolver", func() {
 			})
 		})
 	})
+
+	Describe("binding to nil", func() {
+		Context("when the type is not nilable", func() {
+			It("panics", func() {
+				Expect(func(){BindToNil(resolver, TypeKey[string]())}).To(Panic())
+			})
+		})
+
+		Context("when the type is nilable", func() {
+			It("binds to nil", func() {
+				BindToNil(resolver, TypeKey[chan string]())
+				BindToNil(resolver, Key[func()]("func()"))
+				BindToNil(resolver, TypeKey[RandomInterface]())
+				BindToNil(resolver, Key[map[string]int]("my map"))
+				BindToNil(resolver, TypeKey[*RandomStruct]())
+				BindToNil(resolver, Key[[]string]("string slice"))
+
+				Expect(Resolve(resolver, TypeKey[chan string]())).To(BeNil())
+				Expect(Resolve(resolver, Key[func()]("func()"))).To(BeNil())
+				Expect(Resolve(resolver, TypeKey[RandomInterface]())).To(BeNil())
+				Expect(Resolve(resolver, Key[map[string]int]("my map"))).To(BeNil())
+				Expect(Resolve(resolver, TypeKey[*RandomStruct]())).To(BeNil())
+				Expect(Resolve(resolver, Key[[]string]("string slice"))).To(BeNil())
+			})
+		})
+	})
 })

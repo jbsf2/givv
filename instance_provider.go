@@ -1,15 +1,15 @@
 package givv
 
-type InstanceProvider[T any] struct {
+type instanceProvider[T any] struct {
 	instance T
 }
 
-func NewInstanceProvider[T any](instance T) Provider[T] {
-	return InstanceProvider[T]{
+func newInstanceProvider[T any](instance T) Provider[T] {
+	return instanceProvider[T]{
 		instance: instance,
 	}
 }
 
-func (instanceProvider InstanceProvider[T]) Get() T {
-	return instanceProvider.instance
+func (provider instanceProvider[T]) Get() T {
+	return provider.instance
 }
